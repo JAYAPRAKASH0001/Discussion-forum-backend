@@ -20,7 +20,7 @@ export class Question extends Model{
 
     @CreatedAt
     @Column(DataType.DATE)
-    createdAt!: Date;
+    created_at!: Date;
 
     @BelongsToMany(()=>Tags, ()=>QuestionTags)
     tags!: Tags[];

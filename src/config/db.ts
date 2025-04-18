@@ -18,8 +18,4 @@ const sequelize = new Sequelize({
     models: [Question, Tags, QuestionTags]
 });
 
-sequelize.sync()
-    .then( ()=> console.log("Connection with database is created"))
-    .catch( (err)=> console.log("Error on Connecting database", err));
-
 export default sequelize;

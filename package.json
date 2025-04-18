@@ -4,7 +4,11 @@
   "description": "The backend of the Discussion Forum web application built using Node.js with TypeScript, Express.js and MySQL.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node dist/index.js",
+    "dev": "ts-node src/server.ts",
+    "build": "tsc",
+    "serve": "nodemon src/server.ts"
   },
   "keywords": [],
   "author": "",

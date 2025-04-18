@@ -15,5 +15,5 @@ export class QuestionTags extends Model {
     @PrimaryKey
     @ForeignKey(()=> Tags)
     @Column(DataType.INTEGER)
-    tags_id!: number;
+    tag_id!: number;
 }
