@@ -16,10 +16,35 @@ export const getAllQuestions = async(req: Request, res: Response): Promise<void>
             created_at: q.created_at,
             tags: q.tags.map(t => t.tag_name)
         }));
-        res.status(200).json(formattedResult);
+        res.status(200).json(questions);
     }
     catch(err){
         res.status(500).json({ success: false, message: 'Failed to fetch Questions',err});
+    }
+}
+
+//Create the new question with tags.
+export const createQuestion = async(req: Request, res: Response): Promise<void> => {
+    try {
+        const {title, description, tags} = req.body;
+        const newQuestion = await Question.create({ title, description});
+
+        const tagInstance = await Promise.all(
+            tags.map( async(tagName: string)=> {
+                const [tag] = await Tags.findOrCreate({ where: {tag_name: tagName} });
+                return tag;
+            })
+        );
+
+        //Automatically creates the association.
+        await newQuestion.$set('tags',tagInstance);
+
+        const createdQuestion = await Question.findByPk(newQuestion.id, { include: Tags });
+        res.status(201).json({message: 'New Question created', question: createdQuestion?.toJSON()});
+    }
+    catch(err) {
+        console.error('Error creating question:', err);
+        res.status(500).json({ success: false, message: 'Failed to create question', err });
     }
 }
 
@@ -32,11 +57,25 @@ export const getQuestionByTag = async(req: Request, res: Response): Promise<void
             return;
         }
         const questions = await Question.findAll({
-            include: [
-                { model: Tags, where: { id: tag.id}, through: { attributes: []}}
-            ]
+            attributes: ['id'],
+            include: [{ 
+                model: Tags, 
+                where: { id: tag.id}, 
+                attributes: [], 
+                through: { attributes: []}
+            }]
         });
-        res.status(200).json(questions);
+        
+        const questionsId = questions.map(q=> q.id);
+
+        const questionsWithTags = await Question.findAll({
+            where: {id: questionsId},
+            include: [{
+                model: Tags,
+                through: { attributes: []}
+            }]
+        })
+        res.status(200).json(questionsWithTags);
     }
     catch(err){
         res.send(500).json({ success: false, message: 'Failed to fetch Questions by Tag', err});
