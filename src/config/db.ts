@@ -4,8 +4,12 @@ import dotenv from "dotenv";
 import { Question } from "../models/questions.model";
 import { Tags } from "../models/tags.model";
 import { QuestionTags } from "../models/question_tags.model";
+import { Answer } from "../models/answers.model";
 
-dotenv.config({ path: path.resolve(__dirname, "./.env")});
+
+
+
+dotenv.config(); 
 
 const sequelize = new Sequelize({
     dialect: 'mysql',
@@ -15,7 +19,8 @@ const sequelize = new Sequelize({
     password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME,
     logging: false,
-    models: [Question, Tags, QuestionTags]
+    models: [Question, Tags, QuestionTags,Answer],
 });
+
 
 export default sequelize;
