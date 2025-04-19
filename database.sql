@@ -13,6 +13,7 @@ CREATE TABLE answers (
   question_id INT,
   answer_text TEXT NOT NULL,
   likes INT DEFAULT 0,
+  dislikes INT DEFAULT 0,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (question_id) REFERENCES questions(id) ON DELETE CASCADE
 );
