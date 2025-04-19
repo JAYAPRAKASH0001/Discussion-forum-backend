@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { Question } from "../models/questions.model";
 import { Tags } from "../models/tags.model";
+import { Op } from "sequelize";
 
 
 //Fetch all questions
@@ -78,6 +79,38 @@ export const getQuestionByTag = async(req: Request, res: Response): Promise<void
         res.status(200).json(questionsWithTags);
     }
     catch(err){
-        res.send(500).json({ success: false, message: 'Failed to fetch Questions by Tag', err});
+        res.status(500).json({ success: false, message: 'Failed to fetch Questions by Tag', err});
+    }
+}
+
+export const searchQuestion = async(req: Request, res: Response): Promise<void> => {
+    try {
+        const keyword = req.query.q as string;
+        if(!keyword || keyword.trim()===''){
+            res.status(400).json({ success: false, message: 'Search keyword is required'});
+            return;
+        }
+
+        const question = await Question.findAll({
+            where: {
+                [Op.or]: [
+                    { title: { [Op.like]: `%${keyword}%`}} ,
+                    { description: { [Op.like]: `%${keyword}%`}}
+                ]
+            },
+            include: [{
+                model: Tags,
+                through: { attributes: []}
+            }]
+        });
+        if(question.length === 0){
+            res.status(404).json({success: false, message: 'No questions found for that keyword'});
+            return;
+        }
+
+        res.status(200).json(question);
+    }
+    catch(err){
+        res.status(500).json({ success: false, message: 'Failed to search question', err});
     }
 }
