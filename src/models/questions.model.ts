@@ -1,6 +1,7 @@
-import { AutoIncrement, Column, CreatedAt, DataType, PrimaryKey, Table, Model, BelongsToMany } from "sequelize-typescript";
+import { AutoIncrement, Column, CreatedAt, DataType, PrimaryKey, Table, Model, BelongsToMany, HasMany } from "sequelize-typescript";
 import { QuestionTags } from "./question_tags.model";
 import { Tags } from "./tags.model";
+import { Answer } from "./answers.model";
 
 @Table({
     tableName: 'questions',
@@ -21,6 +22,9 @@ export class Question extends Model{
     @CreatedAt
     @Column(DataType.DATE)
     created_at!: Date;
+
+    @HasMany(()=>Answer)
+    answers!: Answer[];
 
     @BelongsToMany(()=>Tags, ()=>QuestionTags)
     tags!: Tags[];

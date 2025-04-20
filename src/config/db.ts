@@ -7,9 +7,7 @@ import { QuestionTags } from "../models/question_tags.model";
 import { Answer } from "../models/answers.model";
 
 
-
-
-dotenv.config(); 
+dotenv.config({ path: path.resolve(__dirname, "./.env")});
 
 const sequelize = new Sequelize({
     dialect: 'mysql',
