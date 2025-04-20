@@ -1,7 +1,8 @@
 import { Request, Response } from "express";
 import { Question } from "../models/questions.model";
 import { Tags } from "../models/tags.model";
-import { Op } from "sequelize";
+import { literal, Op } from "sequelize";
+import { Answer } from "../models/answers.model";
 
 const formatQuestion = (question: Question[]) => {
     return question.map(q => ({
@@ -16,12 +17,55 @@ const formatQuestion = (question: Question[]) => {
 //Fetch all questions
 export const getAllQuestions = async(req: Request, res: Response): Promise<void> => {
     try{
-        const questions = await Question.findAll({
-            include: [{ model: Tags, through: { attributes: [] } }]
-        });
+        const filter: string = req.query.filter as string || 'newest';
+        const page: number = parseInt(req.query.page as string) || 1;
+        const limit: number = parseInt(req.query.limit as string) || 10;
+        const offset: number = (page-1)*limit;
 
+        const queryOptions: any = {
+            include: [{ model: Tags, through: { attributes: []} }],
+            limit,
+            offset,
+            distinct: true
+        };
+
+        if(filter==='newest'){
+            queryOptions.order = [['created_at', 'DESC']];
+        }
+        else if(filter==='oldest'){
+            queryOptions.order = [['created_at', 'ASC']];
+        }
+        else if(filter==='unanswered'){
+            queryOptions.include.push({ model: Answer, required: false });
+            queryOptions.where = literal('(SELECT COUNT(*) FROM answers WHERE answers.question_id = Question.id)=0');
+            queryOptions.subQuery = false;
+        }
+        else{
+            queryOptions.order = [['created_at', 'DESC']];
+        }
+
+        const { count, rows: questions } = await Question.findAndCountAll(queryOptions);
+
+        if(count===0){
+            res.status(404).json({success: true, message: "No Questions found"});
+            return;
+        }
+
+        const totalPages = Math.ceil(count/limit);
         const formattedResult = formatQuestion(questions);
-        res.status(200).json(formattedResult);
+
+        res.status(200).json({
+            success: true,
+            data: formattedResult,
+            pagination: {
+                totalQuestions: count,
+                totalPages,
+                currentPage: page,
+                pageSize: limit,
+                hasNextPage: page<totalPages,
+                hasPrevPage: page>1
+            }
+        });
     }
     catch(err){
         res.status(500).json({ success: false, message: 'Failed to fetch Questions',err});
@@ -117,5 +161,28 @@ export const searchQuestion = async(req: Request, res: Response): Promise<void> 
     }
     catch(err){
         res.status(500).json({ success: false, message: 'Failed to search question', err});
+    }
+}
+
+export const getQuestionById = async(req: Request, res: Response): Promise<void> => {
+    try {
+        const id = req.params.id;
+        const question = await Question.findByPk(
+            id, 
+            { include: [{ 
+                model: Tags, 
+                through: {attributes: []}
+            }]}
+        );
+        
+        if(!question){
+            res.status(404).json({ success: false, message: "No question exists with the id"});
+            return;
+        }
+        const formattedResult = formatQuestion([question])[0];
+        res.status(200).json(formattedResult);
+    }
+    catch(err){
+        res.status(500).json({ success: false, message: 'Failed to fetch question by id', err});
     }
 }
