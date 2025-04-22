@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { Answer } from '../models/answers.model';
 import { Question } from '../models/questions.model';
+import { literal } from 'sequelize';
 
 
 
@@ -11,7 +12,11 @@ export const getAnswersByQuestionId = async (req: Request, res: Response): Promi
 
   try {
       const question = await Question.findByPk(questionId, {
-          include: [Answer]
+          include: [{
+            model: Answer,
+            separate: true,
+            order: [[literal('likes - dislikes'), 'DESC']]
+          }]
       });
 
       if (!question) {

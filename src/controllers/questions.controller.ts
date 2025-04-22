@@ -134,30 +134,49 @@ export const getQuestionByTag = async(req: Request, res: Response): Promise<void
 export const searchQuestion = async(req: Request, res: Response): Promise<void> => {
     try {
         const keyword = req.query.q as string;
+        const page: number = parseInt(req.query.page as string) || 1;
+        const limit: number = parseInt(req.query.limit as string) || 10;
+        const offset: number = (page-1)*limit;
+
         if(!keyword || keyword.trim()===''){
             res.status(400).json({ success: false, message: 'Search keyword is required'});
             return;
         }
 
-        const questions = await Question.findAll({
+        const queryOptions: any = {
             where: {
                 [Op.or]: [
                     { title: { [Op.like]: `%${keyword}%`}} ,
                     { description: { [Op.like]: `%${keyword}%`}}
                 ]
             },
-            include: [{
-                model: Tags,
-                through: { attributes: []}
-            }]
-        });
+            include: [{ model: Tags, through: { attributes: []} }],
+            limit,
+            offset,
+            distinct: true
+        };
+
+        const {count, rows: questions} = await Question.findAndCountAll(queryOptions);
         if(questions.length === 0){
             res.status(404).json({success: false, message: 'No questions found for that keyword'});
             return;
         }
 
+        const totalPages = Math.ceil(count/limit);
         const formattedResult = formatQuestion(questions);
-        res.status(200).json(formattedResult);
+
+        res.status(200).json({
+            success: true,
+            data: formattedResult,
+            pagination: {
+                totalQuestions: count,
+                totalPages,
+                currentPage: page,
+                pageSize: limit,
+                hasNextPage: page<totalPages,
+                hasPrevPage: page>1
+            }
+        });
     }
     catch(err){
         res.status(500).json({ success: false, message: 'Failed to search question', err});
