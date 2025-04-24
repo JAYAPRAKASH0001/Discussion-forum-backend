@@ -46,11 +46,6 @@ export const getAllQuestions = async(req: Request, res: Response): Promise<void>
 
         const { count, rows: questions } = await Question.findAndCountAll(queryOptions);
 
-        if(count===0){
-            res.status(404).json({success: true, message: "No Questions found"});
-            return;
-        }
-
         const totalPages = Math.ceil(count/limit);
         const formattedResult = formatQuestion(questions);
 
@@ -158,7 +153,11 @@ export const searchQuestion = async(req: Request, res: Response): Promise<void> 
 
         const {count, rows: questions} = await Question.findAndCountAll(queryOptions);
         if(questions.length === 0){
-            res.status(404).json({success: false, message: 'No questions found for that keyword'});
+            res.status(200).json({
+                success: true, 
+                data:[],
+                message: 'No questions found for that keyword'
+            });
             return;
         }
 
